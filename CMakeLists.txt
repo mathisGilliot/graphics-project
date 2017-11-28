@@ -198,8 +198,8 @@ set (USE_SYSTEM_IMGUI ${USE_SYSTEM_IMGUI} CACHE BOOL "Whether to use the system 
 
 # Configure *C++ Environment Variables*
 set (MSAA_RATE "1" CACHE STRING "Window MSAA rate")
-set (WIDTH "1600" CACHE STRING "Window width")
-set (HEIGHT "900" CACHE STRING "Window height")
+set (WIDTH "800" CACHE STRING "Window width")
+set (HEIGHT "600" CACHE STRING "Window height")
 set (ROOT_DIR "${PROJECT_SOURCE_DIR}")
 configure_file ("${PROJECT_SOURCE_DIR}/src/core/config.hpp.in" "${PROJECT_BINARY_DIR}/config.hpp")
 
