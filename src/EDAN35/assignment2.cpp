@@ -16,6 +16,8 @@
 #include "core/Window.h"
 #include <imgui.h>
 #include "external/imgui_impl_glfw_gl3.h"
+#include "Ball.hpp"
+#include "Quad.hpp"
 
 #include "external/glad/glad.h"
 #include <GLFW/glfw3.h>
@@ -261,7 +263,32 @@ edan35::Assignment2::run()
 		if (inputHandler->GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
 			reload_shaders();
 		}
-
+		
+		const glm::vec3 translation = glm::vec3(15.0,100.0,0.0);
+		// Load the sphere geometry
+		/*auto sphereTest = Node();
+		auto const sphere = Ball::createSphere(4u, 4u, 20.0f);
+		sphereTest.set_geometry(sphere);
+		const glm::vec3 translation = glm::vec3(15.0,100.0,0.0);
+		sphereTest.set_translation(translation);
+		sphereTest.set_program(fallback_shader, set_uniforms);*/
+		
+		// Default shader
+		auto defaultShader = bonobo::createProgram("default.vert", "default.frag");
+		if (defaultShader == 0u) {
+			LogError("Failed to load shader");
+			return;
+		}
+		
+		// Load the quad geometry
+		auto quadTest = Node();
+		auto const quad = Quad::createQuad(400, 400, 10);
+		quadTest.set_geometry(quad);
+		quadTest.set_rotation_x(90.*3.14/180);
+		quadTest.set_translation(translation);
+		quadTest.set_program(defaultShader, [](GLuint /*program*/){});
+		auto quadTexture = bonobo::loadTexture2D("checkers.png");
+		quadTest.add_texture("quad_texture", quadTexture, GL_TEXTURE_2D);
 
 
 		glDepthFunc(GL_LESS);
@@ -283,7 +310,9 @@ edan35::Assignment2::run()
 
 		for (auto const& element : sponza_elements)
 			element.render(mCamera.GetWorldToClipMatrix(), element.get_transform(), fill_gbuffer_shader, set_uniforms);
-
+		//sphereTest.render(mCamera.GetWorldToClipMatrix(), sphereTest.get_transform());
+		quadTest.render(mCamera.GetWorldToClipMatrix(), quadTest.get_transform());
+		
 
 
 		glCullFace(GL_FRONT);
