@@ -264,7 +264,7 @@ edan35::Assignment2::run()
 			reload_shaders();
 		}
 		
-		const glm::vec3 translation = glm::vec3(15.0,100.0,0.0);
+		const glm::vec3 translation = glm::vec3(50.0,150.0,0.0);
 		// Load the sphere geometry
 		/*auto sphereTest = Node();
 		auto const sphere = Ball::createSphere(4u, 4u, 20.0f);
@@ -279,14 +279,21 @@ edan35::Assignment2::run()
 			LogError("Failed to load shader");
 			return;
 		}
+		// Default shader
+		auto mirrorShader = bonobo::createProgram("mirror.vert", "mirror.frag");
+		if (mirrorShader == 0u) {
+			LogError("Failed to load shader");
+			return;
+		}
 		
 		// Load the quad geometry
 		auto quadTest = Node();
-		auto const quad = Quad::createQuad(400, 400, 10);
+		auto const quad = Quad::createQuad(40, 40, 10);
 		quadTest.set_geometry(quad);
 		quadTest.set_rotation_x(90.*3.14/180);
+		quadTest.set_rotation_y(90.*3.14 / 180);
 		quadTest.set_translation(translation);
-		quadTest.set_program(defaultShader, [](GLuint /*program*/){});
+		quadTest.set_program(mirrorShader, [](GLuint /*program*/){});
 		auto quadTexture = bonobo::loadTexture2D("checkers.png");
 		quadTest.add_texture("quad_texture", quadTexture, GL_TEXTURE_2D);
 
@@ -328,7 +335,8 @@ edan35::Assignment2::run()
 
 		for (size_t i = 0; i < constant::lights_nb; ++i) {
 			auto& lightTransform = lightTransforms[i];
-			lightTransform.SetRotate(seconds_nb * 0.1f + i * 1.57f, glm::vec3(0.0f, 1.0f, 0.0f));
+			//lightTransform.SetRotate(seconds_nb * 0.1f + i * 1.57f, glm::vec3(0.0f, 1.0f, 0.0f)); //rotation of light
+			lightTransform.SetRotate(-90*3.14 / 180, glm::vec3(0.0f, 1.0f, 0.0f));
 
 			auto light_matrix = lightProjection * lightOffsetTransform.GetMatrixInverse() * lightTransform.GetMatrixInverse();
 
