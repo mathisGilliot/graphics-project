@@ -110,7 +110,9 @@ edan35::Assignment2::run()
 	cone.set_geometry(cone_geometry);
 
 	auto const window_size = window->GetDimensions();
-
+	auto const mirror_width = 50;
+	auto const mirror_height = 50;
+	
 	//
 	// Setup the camera
 	//
@@ -126,6 +128,12 @@ edan35::Assignment2::run()
 	//
 	// Load all the shader programs used
 	//
+	// Build Program
+	auto mirrorShader = bonobo::createProgram("mirror.vert", "mirror.frag");
+	if (mirrorShader == 0u) {
+		LogError("Failed to load mirror shader");
+		return;
+	}
 	auto fallback_shader = bonobo::createProgram("fallback.vert", "fallback.frag");
 	if (fallback_shader == 0u) {
 		LogError("Failed to load fallback shader");
@@ -163,7 +171,6 @@ edan35::Assignment2::run()
 	auto const light_specular_contribution_texture = bonobo::createTexture(window_size.x, window_size.y);
 	auto const depth_texture                       = bonobo::createTexture(window_size.x, window_size.y, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT);
 	auto const shadowmap_texture                   = bonobo::createTexture(constant::shadowmap_res_x, constant::shadowmap_res_y, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT);
-
 
 	//
 	// Setup FBOs
@@ -264,7 +271,7 @@ edan35::Assignment2::run()
 			reload_shaders();
 		}
 		
-		const glm::vec3 translation = glm::vec3(50.0,150.0,0.0);
+		const glm::vec3 translation = glm::vec3(500.0,100.0,0.0);
 		// Load the sphere geometry
 		/*auto sphereTest = Node();
 		auto const sphere = Ball::createSphere(4u, 4u, 20.0f);
@@ -279,16 +286,10 @@ edan35::Assignment2::run()
 			LogError("Failed to load shader");
 			return;
 		}
-		// Default shader
-		auto mirrorShader = bonobo::createProgram("mirror.vert", "mirror.frag");
-		if (mirrorShader == 0u) {
-			LogError("Failed to load shader");
-			return;
-		}
 		
 		// Load the quad geometry
 		auto quadTest = Node();
-		auto const quad = Quad::createQuad(40, 40, 10);
+		auto const quad = Quad::createQuad(mirror_width, mirror_height, 10);
 		quadTest.set_geometry(quad);
 		quadTest.set_rotation_x(90.*3.14/180);
 		quadTest.set_rotation_y(90.*3.14 / 180);
@@ -296,7 +297,6 @@ edan35::Assignment2::run()
 		quadTest.set_program(mirrorShader, [](GLuint /*program*/){});
 		auto quadTexture = bonobo::loadTexture2D("checkers.png");
 		quadTest.add_texture("quad_texture", quadTexture, GL_TEXTURE_2D);
-
 
 		glDepthFunc(GL_LESS);
 		//
@@ -319,8 +319,6 @@ edan35::Assignment2::run()
 			element.render(mCamera.GetWorldToClipMatrix(), element.get_transform(), fill_gbuffer_shader, set_uniforms);
 		//sphereTest.render(mCamera.GetWorldToClipMatrix(), sphereTest.get_transform());
 		quadTest.render(mCamera.GetWorldToClipMatrix(), quadTest.get_transform());
-		
-
 
 		glCullFace(GL_FRONT);
 		//
@@ -475,6 +473,8 @@ edan35::Assignment2::run()
 		lastTime = nowTime;
 	}
 
+	glDeleteProgram(mirrorShader);
+	mirrorShader = 0u;
 	glDeleteProgram(resolve_deferred_shader);
 	resolve_deferred_shader = 0u;
 	glDeleteProgram(accumulate_lights_shader);
