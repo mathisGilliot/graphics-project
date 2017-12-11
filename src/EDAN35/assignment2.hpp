@@ -1,5 +1,5 @@
 #pragma once
-
+#include <glm/glm.hpp>
 
 class InputHandler;
 class Window;
@@ -25,6 +25,8 @@ namespace edan35
 		//! \brief Contains the logic of the assignment, along with the
 		//! render loop.
 		void run();
+		
+		glm::vec3 symetry(glm::vec3 originalPoint, glm::vec3 planePoint, glm::vec3 normalVector);
 
 	private:
 		InputHandler *inputHandler;

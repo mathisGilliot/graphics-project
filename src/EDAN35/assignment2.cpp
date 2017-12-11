@@ -29,6 +29,8 @@
 #include <cstdlib>
 #include <stdexcept>
 
+#define PI 3.14159265359
+
 enum class polygon_mode_t : unsigned int {
 	fill = 0u,
 	line,
@@ -46,8 +48,9 @@ namespace constant
 	constexpr uint32_t shadowmap_res_y = 1024;
 
 	constexpr size_t lights_nb           = 1;
+	constexpr size_t total_lights_nb     = 2;
 	constexpr float  light_intensity     = 720000.0f;
-	constexpr float  light_angle_falloff = glm::radians(37.0f);
+	constexpr float  light_angle_falloff = glm::radians(30.0f);
 	constexpr float  light_cutoff        = 0.05f;
 }
 
@@ -86,6 +89,15 @@ edan35::Assignment2::~Assignment2()
 	window = nullptr;
 
 	Log::View::Destroy();
+}
+	
+glm::vec3
+edan35::Assignment2::symetry(glm::vec3 originalPoint, glm::vec3 planePoint, glm::vec3 normalVector)
+{
+	glm::vec3 PM = originalPoint - planePoint;
+	float distToPlane = glm::dot(PM, normalVector);
+	glm::vec3 sym = originalPoint - 2 * distToPlane * normalVector;
+	return sym;
 }
 
 void
@@ -210,17 +222,50 @@ edan35::Assignment2::run()
 		glUniform1i(glGetUniformLocation(program, name.c_str()), static_cast<GLint>(slot));
 		glBindSampler(slot, sampler);
 	};
-
+	
+	// Load the quad geometry
+	float angleX = PI/2;
+	float angleY = PI/2+0.2;
+	auto quadTest = Node();
+	auto const quad = Quad::createQuad(mirror_width, mirror_height, 10);
+	quadTest.set_geometry(quad);
+	quadTest.set_rotation_x(angleX);
+	quadTest.set_rotation_y(angleY);
+	const glm::vec3 planePoint = glm::vec3(300.0,100.0,0.0);
+	quadTest.set_translation(planePoint);
+	quadTest.set_program(mirrorShader, [](GLuint /*program*/){});
+	auto quadTexture = bonobo::loadTexture2D("checkers.png");
+	quadTest.add_texture("quad_texture", quadTexture, GL_TEXTURE_2D);
 
 	//
 	// Setup lights properties
 	//
-	std::array<TRSTransform<float, glm::defaultp>, constant::lights_nb> lightTransforms;
-	std::array<glm::vec3, constant::lights_nb> lightColors;
+	std::array<TRSTransform<float, glm::defaultp>, constant::total_lights_nb> lightTransforms;
+	std::array<glm::vec3, constant::total_lights_nb> lightColors;
+	
+	glm::vec3 originalPoint = glm::vec3(0.0f, 125.0f, 0.0f);
+	// Symetric
+	glm::vec3 mirror_normal = glm::vec3(1.0, 0., 0.);
+	glm::vec3 rotation;
+	rotation.x = angleX;
+	rotation.y = angleY;
+	auto const rotation_x = glm::rotate(glm::mat4(), rotation.x, glm::vec3(1.0, 0.0, 0.0));
+	auto const rotation_y = glm::rotate(glm::mat4(), rotation.y, glm::vec3(0.0, 1.0, 0.0));
+	auto const rotation_z = glm::rotate(glm::mat4(), rotation.z, glm::vec3(0.0, 0.0, 1.0));
+	auto const rotating = rotation_z * rotation_y * rotation_x;
+	mirror_normal = rotating*glm::vec4(0.0, 1.0, 0.0, 1.0);
+	//std::cout << mirror_normal.x;
+	glm::vec3 symetricPoint = symetry(originalPoint, planePoint, mirror_normal);
 
 	for (size_t i = 0; i < constant::lights_nb; ++i) {
-		lightTransforms[i].SetTranslate(glm::vec3(0.0f, 125.0f, 0.0f));
+		lightTransforms[i].SetTranslate(originalPoint);
 		lightColors[i] = glm::vec3(0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)),
+								   0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)),
+								   0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)));
+		// Symetric
+		//glm::vec3 symetricPoint = symetry(originalPoint, planePoint, glm::vec3(0.7, 0., 0));
+		lightTransforms[i+constant::lights_nb].SetTranslate(symetricPoint);
+		lightColors[i+constant::lights_nb] = glm::vec3(0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)),
 		                           0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)),
 		                           0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)));
 	}
@@ -234,8 +279,7 @@ edan35::Assignment2::run()
 	auto lightProjection = glm::perspective(bonobo::pi * 0.5f,
 	                                        static_cast<float>(constant::shadowmap_res_x) / static_cast<float>(constant::shadowmap_res_y),
 	                                        1.0f, 10000.0f);
-
-
+	
 	auto seconds_nb = 0.0f;
 
 
@@ -271,14 +315,18 @@ edan35::Assignment2::run()
 			reload_shaders();
 		}
 		
-		const glm::vec3 translation = glm::vec3(500.0,100.0,0.0);
 		// Load the sphere geometry
-		/*auto sphereTest = Node();
-		auto const sphere = Ball::createSphere(4u, 4u, 20.0f);
-		sphereTest.set_geometry(sphere);
-		const glm::vec3 translation = glm::vec3(15.0,100.0,0.0);
-		sphereTest.set_translation(translation);
-		sphereTest.set_program(fallback_shader, set_uniforms);*/
+		auto sphereTest1 = Node();
+		auto const sphere = Ball::createSphere(40u, 40u, 20.0f);
+		sphereTest1.set_geometry(sphere);
+		//const glm::vec3 translation = glm::vec3(15.0,100.0,0.0);
+		sphereTest1.set_translation(originalPoint);
+		sphereTest1.set_program(fallback_shader, set_uniforms);
+		
+		auto sphereTest2 = Node();
+		sphereTest2.set_geometry(sphere);
+		sphereTest2.set_translation(symetricPoint);
+		sphereTest2.set_program(fallback_shader, set_uniforms);
 		
 		// Default shader
 		auto defaultShader = bonobo::createProgram("default.vert", "default.frag");
@@ -286,17 +334,6 @@ edan35::Assignment2::run()
 			LogError("Failed to load shader");
 			return;
 		}
-		
-		// Load the quad geometry
-		auto quadTest = Node();
-		auto const quad = Quad::createQuad(mirror_width, mirror_height, 10);
-		quadTest.set_geometry(quad);
-		quadTest.set_rotation_x(90.*3.14/180);
-		quadTest.set_rotation_y(90.*3.14 / 180);
-		quadTest.set_translation(translation);
-		quadTest.set_program(mirrorShader, [](GLuint /*program*/){});
-		auto quadTexture = bonobo::loadTexture2D("checkers.png");
-		quadTest.add_texture("quad_texture", quadTexture, GL_TEXTURE_2D);
 
 		glDepthFunc(GL_LESS);
 		//
@@ -317,7 +354,8 @@ edan35::Assignment2::run()
 
 		for (auto const& element : sponza_elements)
 			element.render(mCamera.GetWorldToClipMatrix(), element.get_transform(), fill_gbuffer_shader, set_uniforms);
-		//sphereTest.render(mCamera.GetWorldToClipMatrix(), sphereTest.get_transform());
+		sphereTest1.render(mCamera.GetWorldToClipMatrix(), sphereTest1.get_transform());
+		sphereTest2.render(mCamera.GetWorldToClipMatrix(), sphereTest2.get_transform());
 		quadTest.render(mCamera.GetWorldToClipMatrix(), quadTest.get_transform());
 
 		glCullFace(GL_FRONT);
@@ -330,11 +368,27 @@ edan35::Assignment2::run()
 		glViewport(0, 0, window_size.x, window_size.y);
 		// XXX: Is any clearing needed?
 		glClear(GL_COLOR_BUFFER_BIT);
-
+		
 		for (size_t i = 0; i < constant::lights_nb; ++i) {
 			auto& lightTransform = lightTransforms[i];
 			//lightTransform.SetRotate(seconds_nb * 0.1f + i * 1.57f, glm::vec3(0.0f, 1.0f, 0.0f)); //rotation of light
-			lightTransform.SetRotate(-90*3.14 / 180, glm::vec3(0.0f, 1.0f, 0.0f));
+			lightTransform.SetRotate(-PI/2, glm::vec3(0.0f, 1.0f, 0.0f));
+			
+			// Symtric light
+			auto& reflectedLightTransform = lightTransforms[i+1];
+			//reflectedLightTransform.SetRotate((-90*3.14 / 180), glm::vec3(0.0f, 1.0f, 0.0f));
+			float alpha = -PI/2;
+			auto const rotationToIncident = glm::rotate(glm::mat4(), alpha, glm::vec3(0.0, 1.0, 0.0));
+			auto const rotationToReflected = glm::rotate(glm::mat4(), 3.14f, mirror_normal);
+			glm::vec4 incidentRay = rotationToIncident*glm::vec4(0.0, 0.0, 1.0, 1.0);
+			glm::vec3 reflectedRay = rotationToReflected*incidentRay;
+			reflectedLightTransform.LookAt(reflectedRay);
+		}
+
+		for (size_t i = 0; i < constant::total_lights_nb; ++i) {
+			auto& lightTransform = lightTransforms[i];
+			//lightTransform.SetRotate(seconds_nb * 0.1f + i * 1.57f, glm::vec3(0.0f, 1.0f, 0.0f)); //rotation of light
+			//lightTransform.SetRotate(-90*3.14 / 180, glm::vec3(0.0f, 1.0f, 0.0f));
 
 			auto light_matrix = lightProjection * lightOffsetTransform.GetMatrixInverse() * lightTransform.GetMatrixInverse();
 
