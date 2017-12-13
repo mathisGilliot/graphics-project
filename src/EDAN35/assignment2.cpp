@@ -48,7 +48,7 @@ namespace constant
 	constexpr uint32_t shadowmap_res_y = 1024;
 
 	constexpr size_t lights_nb           = 1;
-	constexpr size_t total_lights_nb     = 2;
+	constexpr size_t mirrors_nb     	 = 1;
 	constexpr float  light_intensity     = 720000.0f;
 	constexpr float  light_angle_falloff = glm::radians(30.0f);
 	constexpr float  light_cutoff        = 0.05f;
@@ -227,58 +227,91 @@ edan35::Assignment2::run()
 	
 	// Load the cube geometry
 	
-	// Quad 1
-	const glm::vec3 P0 = glm::vec3(120.0,50.0,0.0);
-	float angleX = PI/2-0.0;
-	float angleY = PI/2-0.2;
-	
-	auto quad1 = Node();
 	auto const quad = Quad::createQuad(mirror_width, mirror_height, 10);
-	quad1.set_geometry(quad);
-	quad1.set_rotation_x(angleX);
-	quad1.set_rotation_y(angleY);
-	quad1.set_translation(P0);
-	quad1.set_program(mirrorShader, [](GLuint /*program*/){});
+	
+	// Quad 0
+	const glm::vec3 P0 = glm::vec3(120.0,50.0,0.0);
+	float angle1X = PI/2;
+	float angle1Y = PI/2;
+	
+	auto quad0 = Node();
+	quad0.set_geometry(quad);
+	quad0.set_rotation_x(angle1X);
+	quad0.set_rotation_y(angle1Y);
+	quad0.set_translation(P0);
+	quad0.set_program(mirrorShader, [](GLuint /*program*/){});
 	// Matze job : add a golden texture
 	//auto quadTexture = bonobo::loadTexture2D("checkers.png");
 	//quadTest.add_texture("quad_texture", quadTexture, GL_TEXTURE_2D);
 	glm::vec3 P1 = glm::vec3(mirror_width,0.0,0.0);
 	glm::vec3 P2 = glm::vec3(mirror_width,0.0,mirror_height);
 	glm::vec3 P3 = glm::vec3(0.0,0.0,mirror_height);
-	auto const rotationX = glm::rotate(glm::mat4(), angleX, glm::vec3(1.0, 0.0, 0.0));
-	auto const rotationY = glm::rotate(glm::mat4(), angleY, glm::vec3(0.0, 1.0, 0.0));
-	P1 = P0 + glm::vec3(rotationY*rotationX*glm::vec4(P1, 1.0));
-	P2 = P0 + glm::vec3(rotationY*rotationX*glm::vec4(P2, 1.0));
-	P3 = P0 + glm::vec3(rotationY*rotationX*glm::vec4(P3, 1.0));
+	auto const rotation1X = glm::rotate(glm::mat4(), angle1X, glm::vec3(1.0, 0.0, 0.0));
+	auto const rotation1Y = glm::rotate(glm::mat4(), angle1Y, glm::vec3(0.0, 1.0, 0.0));
+	P1 = P0 + glm::vec3(rotation1Y*rotation1X*glm::vec4(P1, 1.0));
+	P2 = P0 + glm::vec3(rotation1Y*rotation1X*glm::vec4(P2, 1.0));
+	P3 = P0 + glm::vec3(rotation1Y*rotation1X*glm::vec4(P3, 1.0));
+	
+	
+	// Quad 1
+	const glm::vec3 Q0 = glm::vec3(120.0,50.0,50.0);
+	float angle2X = PI/2;
+	float angle2Y = 0.0;
+	
+	auto quad1 = Node();
+	quad1.set_geometry(quad);
+	quad1.set_rotation_x(angle2X);
+	quad1.set_rotation_y(angle2Y);
+	quad1.set_translation(Q0);
+	quad1.set_program(mirrorShader, [](GLuint /*program*/){});
+	// Matze job : add a golden texture
+	//auto quadTexture = bonobo::loadTexture2D("checkers.png");
+	//quadTest.add_texture("quad_texture", quadTexture, GL_TEXTURE_2D);
+	glm::vec3 Q1 = glm::vec3(mirror_width,0.0,0.0);
+	glm::vec3 Q2 = glm::vec3(mirror_width,0.0,mirror_height);
+	glm::vec3 Q3 = glm::vec3(0.0,0.0,mirror_height);
+	auto const rotation2X = glm::rotate(glm::mat4(), angle2X, glm::vec3(1.0, 0.0, 0.0));
+	auto const rotation2Y = glm::rotate(glm::mat4(), angle2Y, glm::vec3(0.0, 1.0, 0.0));
+	Q1 = Q0 + glm::vec3(rotation2Y*rotation2X*glm::vec4(Q1, 1.0));
+	Q2 = Q0 + glm::vec3(rotation2Y*rotation2X*glm::vec4(Q2, 1.0));
+	Q3 = Q0 + glm::vec3(rotation2Y*rotation2X*glm::vec4(Q3, 1.0));
 	
 	//
 	// Setup lights properties
 	//
-	std::array<TRSTransform<float, glm::defaultp>, constant::total_lights_nb> lightTransforms;
-	std::array<glm::vec3, constant::total_lights_nb> lightColors;
+	std::array<TRSTransform<float, glm::defaultp>, constant::lights_nb*(constant::mirrors_nb+1)> lightTransforms;
+	std::array<glm::vec3, constant::lights_nb*(constant::mirrors_nb+1)> lightColors;
 	
-	glm::vec3 originalPoint = glm::vec3(0.0, 75.0, 0.0);
-	// Symetric
-	glm::vec3 mirror_normal = glm::vec3(1.0, 0., 0.);
-	glm::vec3 rotation;
-	rotation.x = angleX;
-	rotation.y = angleY;
-	auto const rotation_x = glm::rotate(glm::mat4(), rotation.x, glm::vec3(1.0, 0.0, 0.0));
-	auto const rotation_y = glm::rotate(glm::mat4(), rotation.y, glm::vec3(0.0, 1.0, 0.0));
-	auto const rotation_z = glm::rotate(glm::mat4(), rotation.z, glm::vec3(0.0, 0.0, 1.0));
-	auto const rotating = rotation_z * rotation_y * rotation_x;
-	mirror_normal = rotating*glm::vec4(0.0, 1.0, 0.0, 1.0);
-	glm::vec3 symetricPoint = symetry(originalPoint, P0, mirror_normal);
+	glm::vec3 originalLightPoint = glm::vec3(0.0, 75.0, 0.0);
+	
+	// Symetric lights (6 fake lights)
+	glm::vec3 mirror1_normal;
+	glm::vec3 rotation1;
+	rotation1.x = angle1X;
+	rotation1.y = angle1Y;
+	auto const rotation1_x = glm::rotate(glm::mat4(), rotation1.x, glm::vec3(1.0, 0.0, 0.0));
+	auto const rotation1_y = glm::rotate(glm::mat4(), rotation1.y, glm::vec3(0.0, 1.0, 0.0));
+	auto const rotation1_z = glm::rotate(glm::mat4(), rotation1.z, glm::vec3(0.0, 0.0, 1.0));
+	auto const rotating1 = rotation1_z * rotation1_y * rotation1_x;
+	mirror1_normal = rotating1*glm::vec4(0.0, 1.0, 0.0, 1.0);
+	glm::vec3 symetricPoint1 = symetry(originalLightPoint, P0, mirror1_normal);
+	
+	
+	glm::vec3 quadAttributes[5] =
+	{mirror1_normal, P0, P1, P2, P3,
+		//mirror2_normal, Q0, Q1, Q2, Q3
+	};
 
 	for (size_t i = 0; i < constant::lights_nb; ++i) {
-		lightTransforms[i].SetTranslate(originalPoint);
+		lightTransforms[i].SetTranslate(originalLightPoint);
 		lightColors[i] = glm::vec3(0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)),
 								   0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)),
 								   0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)));
-		// Symetric
-		//glm::vec3 symetricPoint = symetry(originalPoint, planePoint, glm::vec3(0.7, 0., 0));
-		lightTransforms[i+constant::lights_nb].SetTranslate(symetricPoint);
-		lightColors[i+constant::lights_nb] = glm::vec3(0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)),
+	}
+	// Symetric fake lights
+	for (size_t i = constant::lights_nb; i < constant::lights_nb*(constant::mirrors_nb+1); ++i) {
+		lightTransforms[i].SetTranslate(symetricPoint1);
+		lightColors[i] = glm::vec3(0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)),
 		                           0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)),
 		                           0.5f + 0.5f * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)));
 	}
@@ -336,11 +369,6 @@ edan35::Assignment2::run()
 		sphereLight.set_translation(originalPoint);
 		sphereLight.set_program(fallback_shader, set_uniforms);
 		
-		auto sphereSymLight = Node();
-		sphereSymLight.set_geometry(sphere);
-		sphereSymLight.set_translation(symetricPoint);
-		sphereSymLight.set_program(fallback_shader, set_uniforms);
-		
 		auto sphereIntersection = Node();
 		sphereIntersection.set_geometry(sphere);
 		sphereIntersection.set_translation(intersection);
@@ -349,23 +377,7 @@ edan35::Assignment2::run()
 		auto sphereP0 = Node();
 		sphereP0.set_geometry(sphere);
 		sphereP0.set_translation(P0);
-		sphereP0.set_program(fallback_shader, set_uniforms);
-		
-		auto sphereP1 = Node();
-		sphereP1.set_geometry(sphere);
-		sphereP1.set_translation(P1);
-		sphereP1.set_program(fallback_shader, set_uniforms);
-		
-		auto sphereP2 = Node();
-		sphereP2.set_geometry(sphere);
-		sphereP2.set_translation(P2);
-		sphereP2.set_program(fallback_shader, set_uniforms);
-		
-		auto sphereP3 = Node();
-		sphereP3.set_geometry(sphere);
-		sphereP3.set_translation(P3);
-		sphereP3.set_program(fallback_shader, set_uniforms);*/
-		
+		sphereP0.set_program(fallback_shader, set_uniforms);*/
 		
 		
 		// Default shader
@@ -403,7 +415,8 @@ edan35::Assignment2::run()
 		sphereP3.render(mCamera.GetWorldToClipMatrix(), sphereP3.get_transform());
 		sphereA.render(mCamera.GetWorldToClipMatrix(), sphereA.get_transform());*/
 		//glDisable(GL_CULL_FACE);//glEnable(GL_CULL_FACE);
-		quad1.render(mCamera.GetWorldToClipMatrix(), quad1.get_transform(), fill_gbuffer_shader, set_uniforms);
+		quad0.render(mCamera.GetWorldToClipMatrix(), quad0.get_transform(), fill_gbuffer_shader, set_uniforms);
+		//quad1.render(mCamera.GetWorldToClipMatrix(), quad1.get_transform(), fill_gbuffer_shader, set_uniforms);
 		
 
 		glCullFace(GL_FRONT);
@@ -417,23 +430,23 @@ edan35::Assignment2::run()
 		// XXX: Is any clearing needed?
 		glClear(GL_COLOR_BUFFER_BIT);
 		
+		float alpha = -PI/2;
 		for (size_t i = 0; i < constant::lights_nb; ++i) {
 			auto& lightTransform = lightTransforms[i];
 			//lightTransform.SetRotate(seconds_nb * 0.1f + i * 1.57f, glm::vec3(0.0f, 1.0f, 0.0f)); //rotation of light
-			lightTransform.SetRotate(-PI/2, glm::vec3(0.0f, 1.0f, 0.0f));
-			
-			// Symtric light
-			auto& reflectedLightTransform = lightTransforms[i+1];
-			//reflectedLightTransform.SetRotate((-90*3.14 / 180), glm::vec3(0.0f, 1.0f, 0.0f));
-			float alpha = -PI/2;
+			lightTransform.SetRotate(alpha, glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+		// Symtric fake lights
+		for (size_t i = constant::lights_nb; i < constant::lights_nb*(constant::mirrors_nb+1); ++i) {
+			auto& reflectedLightTransform = lightTransforms[i];
 			auto const rotationToIncident = glm::rotate(glm::mat4(), alpha, glm::vec3(0.0, 1.0, 0.0));
-			auto const rotationToReflected = glm::rotate(glm::mat4(), 3.14f, mirror_normal);
-			glm::vec4 incidentRay = rotationToIncident*glm::vec4(0.0, 0.0, 1.0, 1.0);
+			auto const rotationToReflected = glm::rotate(glm::mat4(), 3.14f, mirror1_normal);
+			glm::vec4 incidentRay = rotationToIncident*glm::vec4(0.0, 0.0, 1.0, 1.0); // default light z-oriented
 			glm::vec3 reflectedRay = rotationToReflected*incidentRay;
 			reflectedLightTransform.LookAt(reflectedRay);
 		}
 
-		for (size_t i = 0; i < constant::total_lights_nb; ++i) {
+		for (size_t i = 0; i < constant::lights_nb*(constant::mirrors_nb+1); ++i) {
 			auto& lightTransform = lightTransforms[i];
 			//lightTransform.SetRotate(seconds_nb * 0.1f + i * 1.57f, glm::vec3(0.0f, 1.0f, 0.0f)); //rotation of light
 			//lightTransform.SetRotate(-90*3.14 / 180, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -452,8 +465,8 @@ edan35::Assignment2::run()
 
 			for (auto const& element : sponza_elements)
 				element.render(light_matrix, glm::mat4(), fill_gbuffer_shader, set_uniforms);
-			//quad1.render(light_matrix, quadTest.get_transform(), fill_gbuffer_shader, set_uniforms);
-			quad1.render(light_matrix, glm::mat4(), fill_gbuffer_shader, set_uniforms);
+			quad0.render(light_matrix, quad0.get_transform(), fill_gbuffer_shader, set_uniforms);
+			//quad0.render(light_matrix, glm::mat4(), fill_gbuffer_shader, set_uniforms);
 
 
 			glEnable(GL_BLEND);
@@ -501,10 +514,16 @@ edan35::Assignment2::run()
 							lightTransform.GetMatrix() * lightOffsetTransform.GetMatrix() * coneScaleTransform.GetMatrix(),
 							accumulate_lights_shader, spotlight_set_uniforms);
 			}
+			// For all symetric lights
 			else {
 				glUseProgram(accumulate_lights_mirror_shader);
+				glm::vec3 mirror_normal = quadAttributes[5*i];
+				glm::vec3 M0 = quadAttributes[5*(i-1)+1];
+				glm::vec3 M1 = quadAttributes[5*(i-1)+2];
+				glm::vec3 M2 = quadAttributes[5*(i-1)+3];
+				glm::vec3 M3 = quadAttributes[5*(i-1)+4];
 			
-			auto const reflected_spotlight_set_uniforms = [&window_size,&mCamera,&light_matrix,&lightColors,&lightTransform,&i,&mirror_normal,&P0,&P1,&P2,&P3](GLuint program){
+			auto const reflected_spotlight_set_uniforms = [&window_size,&mCamera,&light_matrix,&lightColors,&lightTransform,&i,&mirror1_normal,&P0,&P1,&P2,&P3](GLuint program){
 				glUniform2f(glGetUniformLocation(program, "inv_res"),
 							1.0f / static_cast<float>(window_size.x),
 							1.0f / static_cast<float>(window_size.y));
@@ -522,7 +541,7 @@ edan35::Assignment2::run()
 				glUniform2f(glGetUniformLocation(program, "shadowmap_texel_size"),
 							1.0f / static_cast<float>(constant::shadowmap_res_x),
 							1.0f / static_cast<float>(constant::shadowmap_res_y));
-				glUniform3fv(glGetUniformLocation(program, "normalVector"), 1, glm::value_ptr(mirror_normal));
+				glUniform3fv(glGetUniformLocation(program, "normalVector"), 1, glm::value_ptr(mirror1_normal));
 				glUniform3fv(glGetUniformLocation(program, "P0"), 1, glm::value_ptr(P0));
 				glUniform3fv(glGetUniformLocation(program, "P1"), 1, glm::value_ptr(P1));
 				glUniform3fv(glGetUniformLocation(program, "P2"), 1, glm::value_ptr(P2));
@@ -623,6 +642,8 @@ edan35::Assignment2::run()
 	resolve_deferred_shader = 0u;
 	glDeleteProgram(accumulate_lights_shader);
 	accumulate_lights_shader = 0u;
+	glDeleteProgram(accumulate_lights_mirror_shader);
+	accumulate_lights_mirror_shader = 0u;
 	glDeleteProgram(fill_shadowmap_shader);
 	fill_shadowmap_shader = 0u;
 	glDeleteProgram(fill_gbuffer_shader);
