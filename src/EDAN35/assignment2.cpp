@@ -90,62 +90,7 @@ edan35::Assignment2::~Assignment2()
 
 	Log::View::Destroy();
 }
-	
-glm::vec3
-edan35::Assignment2::mirrorIntersection(glm::vec3 A, glm::vec3 B, glm::vec3 planePoint, glm::vec3 normalVector)
-{
-	glm::vec3 res;
-	glm::vec3 AB = B - A;
-	float d = normalVector.x*planePoint.x + normalVector.y*planePoint.y + normalVector.z*planePoint.z;
-	float num = d - (normalVector.x*A.x + normalVector.y*A.y + normalVector.z*A.z);
-	float denom = glm::dot(AB, normalVector);
-	float t = num / denom;
-	res.x = A.x + t*AB.x;
-	res.y = A.y + t*AB.y;
-	res.z = A.z + t*AB.z;
-	//std::cout << res.x;
-	//std::cout << res.y;
-	return res;
-}
-	
-	bool
-	edan35::Assignment2::inside(glm::vec3 M, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3, glm::vec3 normalVector)
-	{
-		// edge 0
-		glm::vec3 P0M = M - P0;
-		glm::vec3 P0P1 = P1 - P0;
-		glm::vec3 n0 = glm::cross(P0P1, normalVector);
-		if (glm::dot(P0M, n0)<0){
-			return false;
-		}
-		
-		// edge 1
-		glm::vec3 P1M = M - P1;
-		glm::vec3 P1P2 = P2 - P1;
-		glm::vec3 n1 = glm::cross(P1P2, normalVector);
-		if (glm::dot(P1M, n1)<0){
-			return false;
-		}
-		
-		// edge 2
-		glm::vec3 P2M = M - P2;
-		glm::vec3 P2P3 = P3 - P2;
-		glm::vec3 n2 = glm::cross(P2P3, normalVector);
-		if (glm::dot(P2M, n2)<0){
-			return false;
-		}
-		
-		// edge 3
-		glm::vec3 P3M = M - P3;
-		glm::vec3 P3P0 = P0 - P3;
-		glm::vec3 n3 = glm::cross(P3P0, normalVector);
-		if (glm::dot(P3M, n3)<0){
-			return false;
-		}
-		
-		return true;
-	}
-	
+
 glm::vec3
 edan35::Assignment2::symetry(glm::vec3 originalPoint, glm::vec3 planePoint, glm::vec3 normalVector)
 {
@@ -280,31 +225,32 @@ edan35::Assignment2::run()
 		glBindSampler(slot, sampler);
 	};
 	
-	// Load the quad geometry
+	// Load the cube geometry
+	
+	// Quad 1
+	const glm::vec3 P0 = glm::vec3(120.0,50.0,0.0);
 	float angleX = PI/2-0.0;
 	float angleY = PI/2-0.2;
-	auto quadTest = Node();
+	
+	auto quad1 = Node();
 	auto const quad = Quad::createQuad(mirror_width, mirror_height, 10);
-	quadTest.set_geometry(quad);
-	quadTest.set_rotation_x(angleX);
-	quadTest.set_rotation_y(angleY);
-	const glm::vec3 planePoint = glm::vec3(120.0,50.0,0.0);
-	quadTest.set_translation(planePoint);
-	quadTest.set_program(mirrorShader, [](GLuint /*program*/){});
-	auto quadTexture = bonobo::loadTexture2D("checkers.png");
-	quadTest.add_texture("quad_texture", quadTexture, GL_TEXTURE_2D);
-	// to do : translate/rot
-	glm::vec3 P0 = glm::vec3(0.0,0.0,0.0);
+	quad1.set_geometry(quad);
+	quad1.set_rotation_x(angleX);
+	quad1.set_rotation_y(angleY);
+	quad1.set_translation(P0);
+	quad1.set_program(mirrorShader, [](GLuint /*program*/){});
+	// Matze job : add a golden texture
+	//auto quadTexture = bonobo::loadTexture2D("checkers.png");
+	//quadTest.add_texture("quad_texture", quadTexture, GL_TEXTURE_2D);
 	glm::vec3 P1 = glm::vec3(mirror_width,0.0,0.0);
 	glm::vec3 P2 = glm::vec3(mirror_width,0.0,mirror_height);
 	glm::vec3 P3 = glm::vec3(0.0,0.0,mirror_height);
 	auto const rotationX = glm::rotate(glm::mat4(), angleX, glm::vec3(1.0, 0.0, 0.0));
 	auto const rotationY = glm::rotate(glm::mat4(), angleY, glm::vec3(0.0, 1.0, 0.0));
-	P0 = planePoint;
-	P1 = planePoint + glm::vec3(rotationY*rotationX*glm::vec4(P1, 1.0));
-	P2 = planePoint + glm::vec3(rotationY*rotationX*glm::vec4(P2, 1.0));
-	P3 = planePoint + glm::vec3(rotationY*rotationX*glm::vec4(P3, 1.0));
-	//P0 = (300.0,100.0,25.0);
+	P1 = P0 + glm::vec3(rotationY*rotationX*glm::vec4(P1, 1.0));
+	P2 = P0 + glm::vec3(rotationY*rotationX*glm::vec4(P2, 1.0));
+	P3 = P0 + glm::vec3(rotationY*rotationX*glm::vec4(P3, 1.0));
+	
 	//
 	// Setup lights properties
 	//
@@ -322,16 +268,7 @@ edan35::Assignment2::run()
 	auto const rotation_z = glm::rotate(glm::mat4(), rotation.z, glm::vec3(0.0, 0.0, 1.0));
 	auto const rotating = rotation_z * rotation_y * rotation_x;
 	mirror_normal = rotating*glm::vec4(0.0, 1.0, 0.0, 1.0);
-	//std::cout << mirror_normal.x;
 	glm::vec3 symetricPoint = symetry(originalPoint, P0, mirror_normal);
-	glm::vec3 A = glm::vec3(0.0, 75.0, 100.0);
-	glm::vec3 B = symetricPoint;
-	glm::vec3 intersection = mirrorIntersection(A, B, P0, mirror_normal);
-	bool insideQuad = inside(intersection, P0, P1, P2, P3, mirror_normal);
-	if (insideQuad)
-		std::cout << "its inside";
-	else
-		std::cout << "its outside";
 
 	for (size_t i = 0; i < constant::lights_nb; ++i) {
 		lightTransforms[i].SetTranslate(originalPoint);
@@ -392,7 +329,7 @@ edan35::Assignment2::run()
 		}
 		
 		// Load the sphere geometry
-		auto sphereLight = Node();
+		/*auto sphereLight = Node();
 		auto const sphere = Ball::createSphere(15u, 15u, 7.0f);
 		sphereLight.set_geometry(sphere);
 		//const glm::vec3 translation = glm::vec3(15.0,100.0,0.0);
@@ -427,12 +364,9 @@ edan35::Assignment2::run()
 		auto sphereP3 = Node();
 		sphereP3.set_geometry(sphere);
 		sphereP3.set_translation(P3);
-		sphereP3.set_program(fallback_shader, set_uniforms);
+		sphereP3.set_program(fallback_shader, set_uniforms);*/
 		
-		auto sphereA = Node();
-		sphereA.set_geometry(sphere);
-		sphereA.set_translation(A);
-		sphereA.set_program(fallback_shader, set_uniforms);
+		
 		
 		// Default shader
 		auto defaultShader = bonobo::createProgram("default.vert", "default.frag");
@@ -460,17 +394,16 @@ edan35::Assignment2::run()
 
 		for (auto const& element : sponza_elements)
 			element.render(mCamera.GetWorldToClipMatrix(), element.get_transform(), fill_gbuffer_shader, set_uniforms);
-		sphereLight.render(mCamera.GetWorldToClipMatrix(), sphereLight.get_transform());
+		/*sphereLight.render(mCamera.GetWorldToClipMatrix(), sphereLight.get_transform());
 		sphereSymLight.render(mCamera.GetWorldToClipMatrix(), sphereSymLight.get_transform());
 		sphereIntersection.render(mCamera.GetWorldToClipMatrix(), sphereIntersection.get_transform());
 		sphereP0.render(mCamera.GetWorldToClipMatrix(), sphereP0.get_transform());
 		sphereP1.render(mCamera.GetWorldToClipMatrix(), sphereP1.get_transform());
 		sphereP2.render(mCamera.GetWorldToClipMatrix(), sphereP2.get_transform());
 		sphereP3.render(mCamera.GetWorldToClipMatrix(), sphereP3.get_transform());
-		sphereA.render(mCamera.GetWorldToClipMatrix(), sphereA.get_transform());
-		glDisable(GL_CULL_FACE);
-		quadTest.render(mCamera.GetWorldToClipMatrix(), quadTest.get_transform(), fill_gbuffer_shader, set_uniforms);
-		glEnable(GL_CULL_FACE);
+		sphereA.render(mCamera.GetWorldToClipMatrix(), sphereA.get_transform());*/
+		//glDisable(GL_CULL_FACE);//glEnable(GL_CULL_FACE);
+		quad1.render(mCamera.GetWorldToClipMatrix(), quad1.get_transform(), fill_gbuffer_shader, set_uniforms);
 		
 
 		glCullFace(GL_FRONT);
@@ -519,9 +452,8 @@ edan35::Assignment2::run()
 
 			for (auto const& element : sponza_elements)
 				element.render(light_matrix, glm::mat4(), fill_gbuffer_shader, set_uniforms);
-			glDisable(GL_CULL_FACE);
-			quadTest.render(light_matrix, quadTest.get_transform(), fill_gbuffer_shader, set_uniforms);
-			glEnable(GL_CULL_FACE);
+			//quad1.render(light_matrix, quadTest.get_transform(), fill_gbuffer_shader, set_uniforms);
+			quad1.render(light_matrix, glm::mat4(), fill_gbuffer_shader, set_uniforms);
 
 
 			glEnable(GL_BLEND);

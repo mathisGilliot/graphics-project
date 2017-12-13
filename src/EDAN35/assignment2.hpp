@@ -26,8 +26,6 @@ namespace edan35
 		//! render loop.
 		void run();
 		
-		bool inside(glm::vec3 M, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3, glm::vec3 normalVector);
-		glm::vec3 mirrorIntersection(glm::vec3 A, glm::vec3 B, glm::vec3 planePoint, glm::vec3 normalVector);
 		glm::vec3 symetry(glm::vec3 originalPoint, glm::vec3 planePoint, glm::vec3 normalVector);
 
 	private:
