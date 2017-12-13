@@ -25,5 +25,5 @@ void main()
     vec3 kd = vec3(0,0,0) * max(dot(N, L), 0);
     vec3 ks = vec3(0.5,0.5,0.5) * pow(max(dot(R, V), 0), 125);
     
-    phong_color = vec4(vec3(0,0,0) + kd + ks, 1);
+	phong_color = vec4(0.9, 0.8, 0.8, 0.0); //vec4(kd + ks, 0.0);
 }
