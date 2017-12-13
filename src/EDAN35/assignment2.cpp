@@ -414,10 +414,14 @@ edan35::Assignment2::run()
 		sphereP2.render(mCamera.GetWorldToClipMatrix(), sphereP2.get_transform());
 		sphereP3.render(mCamera.GetWorldToClipMatrix(), sphereP3.get_transform());
 		sphereA.render(mCamera.GetWorldToClipMatrix(), sphereA.get_transform());*/
-		//glDisable(GL_CULL_FACE);//glEnable(GL_CULL_FACE);
+		
+		//glEnable(GL_CULL_FACE);
+		//glCullFace(GL_BACK);
+		glDisable(GL_CULL_FACE);
 		quad0.render(mCamera.GetWorldToClipMatrix(), quad0.get_transform(), fill_gbuffer_shader, set_uniforms);
 		//quad1.render(mCamera.GetWorldToClipMatrix(), quad1.get_transform(), fill_gbuffer_shader, set_uniforms);
-		
+		glEnable(GL_CULL_FACE);
+		//glDisable(GL_CULL_FACE);
 
 		glCullFace(GL_FRONT);
 		//
@@ -465,8 +469,12 @@ edan35::Assignment2::run()
 
 			for (auto const& element : sponza_elements)
 				element.render(light_matrix, glm::mat4(), fill_gbuffer_shader, set_uniforms);
-			quad0.render(light_matrix, quad0.get_transform(), fill_gbuffer_shader, set_uniforms);
-			//quad0.render(light_matrix, glm::mat4(), fill_gbuffer_shader, set_uniforms);
+			
+			if (i < constant::lights_nb){
+				glDisable(GL_CULL_FACE);
+				quad0.render(light_matrix, quad0.get_transform(), fill_gbuffer_shader, set_uniforms);
+				glEnable(GL_CULL_FACE);
+			}
 
 
 			glEnable(GL_BLEND);
@@ -482,6 +490,7 @@ edan35::Assignment2::run()
 			// XXX: Is any clearing needed?
 			
 			if (i < constant::lights_nb){
+				
 				glUseProgram(accumulate_lights_shader);
 
 			auto const spotlight_set_uniforms = [&window_size,&mCamera,&light_matrix,&lightColors,&lightTransform,&i](GLuint program){
